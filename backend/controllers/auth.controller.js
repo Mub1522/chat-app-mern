@@ -1,20 +1,31 @@
+import { GENDERS } from '../constants/genders.js';
 import User from '../models/user.model.js';
+import { validateForm } from "@mub22/validity";
 
 export const signup = async (req, res) => {
     try {
         const { fullname, username, password, confirmPassword, gender } = req.body;
 
         /* Validations */
-        if (!fullname || !username || !password || !confirmPassword || !gender) {
-            return res.status(400).send('All fields are required');
+        const validations = validateForm(req.body, {
+            fullname: "required|string",
+            username: "required|string",
+            password: "required|string|min:6",
+            confirmPassword: "required|string|min:6",
+        });
+
+        if (!validations.valid) {
+            return res.status(400).send(validations.errors);
         }
 
         if (password !== confirmPassword) {
             return res.status(400).send('Passwords do not match');
         }
 
-        if (password.length < 6) {
-            return res.status(400).send('Password must be at least 6 characters long');
+        let genderOptions = GENDERS;
+
+        if (!genderOptions.includes(gender)) {
+            return res.status(400).send('The gender must be male, female or other');
         }
 
         const user = await User.findOne({ username });
